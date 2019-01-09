@@ -1,0 +1,132 @@
+.reveal pre code {
+  padding: 3px 20px;
+}
+
+.reveal code.invert {
+  background: #FFF;
+  border-radius: 3px;
+  padding: 2px 12px;
+  display: inline-block;
+  color: #000;
+}
+
+.reveal pre {
+  background: #3F3F3F;
+}
+
+.reveal section img {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+
+.reveal table th, .reveal table td, .reveal table tr {
+  border: 0;
+  padding: 5px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+
+.reveal table th {
+  text-shadow: none;
+  color: #000;
+  padding: 7px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+
+#quiz-overlay {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  width: 720px;
+  margin: 0 -320px;
+  left: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  font-family: "Lato", Times;
+  padding: 6px 10px;
+  z-index: 100;
+  color: #AAA;
+  font-size: 18px;
+  text-align: center;
+  line-height: 26px;
+}
+
+#quiz-answers {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  font-family: "Lato", Times;
+  padding: 6px 10px;
+  z-index: 100;
+  font-size: 18px;
+  text-align: left;
+  line-height: 26px;
+  list-style: none;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+#quiz-answers li {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  color: #FFF;
+}
+
+#quiz-overlay span {
+  display: inline-block;
+  margin: 0 10px;
+}
+
+#quiz-question, #quiz-correct {
+  font-weight: bold;
+  color: #FFF;
+}
+
+#quiz-overlay span.quiz-title {
+  margin-right: -6px;
+}
+
+
+ul.columns {
+  display: block;
+  list-style: none;
+  overflow: auto;
+  text-align: center;
+}
+
+.columns li {
+  float: left;
+}
+
+.columns.two li {
+  width: 46%;
+  margin: 0 2%;
+}
+
+.columns.three li {
+  width: 31%;
+  margin: 0 1%;
+}
+
+ul.scrollable {
+  display: block;
+  list-style: none;
+  height: 320px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+  overflow-y: scroll;
+}
+
+.scrollable li {
+  margin: 0 20px 10px;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.scrollable li:first-child {
+  margin-top: 10px;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+    <script src="http://d3js.org/d3.v2.min.js?2.8.1"></script>
+    <style>
+      #graph {
+        width: 960px;
+        height: 400px;
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        background: #FFF;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <canvas id="graph"/>
+    <script>
+      $(function() {
+        var c = document.getElementById("graph").getContext("2d");
+        var data = [];
+        var height = 400;
+        var width = 960;
+        var max = 30000;
+        var i;
+
+        for (i=0; i<20; i++) {
+          data.push(0);
+        }
+
+        var redraw = function() {
+          console.log("redrawing...", data.length);
+          c.fillStyle = "rgb(255, 255, 255)";
+          c.strokeStyle = "rgb(0, 0, 0)";
+          var interval = width / data.length;
+          var position = 0;
+          c.beginPath();
+          c.moveTo(position, height);
+          for (i=0; i<data.length; i++) {
+            var point = data[i];
+            position += interval;
+            var value = height - (height * (point / max)); 
+            c.lineTo(position, value);
+          }
+          console.log(height - (height * (data[10] / max)));
+          c.stroke();
+          console.log("Redrawn.");
+        };
+        
+        window.setInterval(function() {
+          $.get("/memory?r=" + new Date().getTime(), function(packet) {
+            packet = JSON.parse(packet);
+            data.push(packet.memory);
+            data.shift();
+            redraw();
+          })
+        }, 1000);
+        
+      });
+    </script>
+    </boay>
+</html>

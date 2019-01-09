@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>Talking HTTP</title>
+
+    <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+    <meta name="author" content="Hakim El Hattab">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="stylesheet" href="css/reveal.min.css">
+    <link rel="stylesheet" href="css/theme/default.css" id="theme">
+    <link rel="stylesheet" href="overwrite.css" id="theme">
+
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+
+    <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+    <script>
+      document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="reveal">
+
+      <!-- Any section element inside of this container is displayed as a slide -->
+      <div class="slides">
+        <section>
+        <h1>Talking HTTP</h1>
+        <h3 class="inverted">Intro to Web Modules</h3>
+        </section>
+
+        <section>
+        <h2>Me</h2>
+        <ul>
+          <li class="fragment">I work at uStudio.</li>
+          <li class="fragment">We make video management easy.</li>
+          <li class="fragment">We are always looking for a few good devs.</li>
+        </ul>
+        <data class="quiz-question" data-question="What is the best IDE?" data-answers="vi"/>
+        </section>
+
+        <section>
+        <h2>WSGI</h2>
+        <h3>Web Server Gateway Interface</h3>
+        </section>
+
+        <section>
+        <h3>Why Do You Care?</h3>
+        <p>Web applications are just interfaces</p>
+        <p class="fragment">Browsers are ubiquitous GUI frameworks (tk sucks)</p>
+        <p class="fragment">Managing cloud operations (beats screen sessions)</p>
+        <p class="fragment">WSGI is a PEP. (You want to know them all, right?)</p>
+        </section>
+
+        <section>
+        <h3>Pronunciation</h3>
+        <p>Some people pronounce it "Whiz-gi".</p>
+        <p>(rhymes with whiskey)</p>
+        <p class="fragment">I don't.</p>
+        </section>
+
+        <section>
+        <h3>Web Servers for Non-Webheads</h3>
+        <p>HTTP is simple in theory.</p>
+        <p class="fragment">Accept a socket connection</p>
+        <p class="fragment">Parse request payload</p>
+        <p class="fragment">Generate response</p>
+        <p class="fragment">Buffer response payload</p>
+        <p class="fragment">Close socket</p>
+        <data class="quiz-question" data-question="Who invented HTTP?" data-answers="tim,berners,lee,al,gore"/>
+        </section>
+
+        <section>
+        <h3>Request Example</h3>
+        <pre><code>
+POST /articles HTTP/1.1
+User-Agent: my-awesome-client/1.3
+Content-Type: application/json
+Content-Length: 49
+Host: www.myblog.com
+Accept: */*
+
+{"title": "foobar", "content": "This is a post."}
+          </code></pre>
+        </section>
+
+        <section>
+        <h3>Response Example</h3>
+        <pre><code>
+HTTP/1.1 201 Created
+Date: Wed, 10 Jul 2013 02:03:00 GMT
+Expires: -1
+Content-Type: application/json
+Content-Length: 37
+
+{"status": 201, "message": "created"}
+          </code></pre>
+        </section>
+
+        <section>
+        <h3>The Reality</h3>
+        <pre><code class="python">
+sock = socket(AF_INET, SOCK_STREAM)
+sock.bind(("", 8080))
+sock.listen(5)
+
+while True:
+    (client, address) = sock.accept()
+    body = client.recv(BUFFER_SIZE)
+    while "\r\n\r\n" not in body:
+        body += client.recv(BUFFER_SIZE)
+    headers, body = body.split("\r\n\r\n")
+    method, path, headers = extract_headers(headers)
+    content_length = int(headers["content-length"]) - len(body)
+    if content_length:
+        body += client.recv(content_length - len(body))
+    client.send(handle_request(method, path, headers, body))
+    client.close()
+          </code></pre>
+        </section>
+
+        <section>
+        <h3>Lots of Concerns...</h3>
+        <ul class="columns three">
+          <li class="fragment">thread pool</li>
+          <li class="fragment">non-blocking</li>
+          <li class="fragment">routing</li>
+          <li class="fragment">special headers</li>
+          <li class="fragment">keep alive</li>
+          <li class="fragment">buffering</li>
+          <li class="fragment">network issues</li>
+          <li class="fragment">static files</li>
+          <li class="fragment">caching</li>
+          <li class="fragment">middleware</li>
+          <li class="fragment">ssl</li>
+          <li class="fragment">stability</li>
+          <li class="fragment">proxies</li>
+          <li class="fragment">expiration</li>
+          <li class="fragment">range requests</li>
+        </ul>
+        </section>
+
+        <section>
+        <h3>Not Invented Here</h3>
+        <p>The year was 2003...</p>
+        <p class="fragment">The dark ages of Python on the web.</p>
+        <p class="fragment">Everybody rolled their own thing.</p>
+        <p class="fragment">Twisted Web, Zope, Webware, etc.</p>
+        <p class="fragment">Custom servers, CGI, "proprietary" middleware...</p>
+        <p class="fragment">Open-source vendor lock in</p>
+        </section>
+
+        <section data-state="soothe">
+        <h1>Enter WSGI</h1>
+        <h2>Stupid-Simple Standard</h2>
+        </section>
+
+        <section>
+        <h3>Ideas of WSGI</h3>
+        <p>Took cues from Java servlet standardization</p>
+        <p class="fragment">Minimal design implications for existing frameworks</p>
+        <p class="fragment">Extensible for future hotness</p>
+        <p class="fragment">Easy to understand / work with for (early) adopters.</p>
+        </section>
+
+        <section>
+        <img src="images/wsgi_stack.png"/>
+        </section>
+
+        <section>
+        <img src="images/wsgi_stack_app.png"/>
+        </section>
+
+        <section>
+        <h3>WSGI is a function</h3>
+        <p>The most basic app just takes two arguments.</p>
+        <ul>
+          <li class="fragment"><code class="invert">environ</code> is a dictionary of request information</li>
+          <li class="fragment"><code class="invert">start_response</code> handles... starting the response.</li>
+          <li class="fragment">The return value is an iterable of strings.</li>
+        </ul>
+        </section>
+
+        <section>
+        <h3>WSGI is a function</h3>
+        <pre><code class="python">
+def application(environment, start_response):
+    status = "200 OK"
+    headers = [("Content-Type", "application/json")]
+    body = json.dumps({"status": 200, "message": "ok"})
+    start_response(status, headers)
+    yield body
+        </code></pre>
+        </section>
+
+        <section>
+        <p><code class="invert">environ</code> contains... a lot.</p>
+        <ul class="scrollable">
+          <li><b>Apple_PubSub_Socket_Render</b>: /tmp/launch-XuHI0f/Render</li>
+          <li><b>Apple_Ubiquity_Message</b>: /tmp/launch-SdX70z/Apple_Ubiquity_Message</li>
+          <li><b>COMMAND_MODE</b>: unix2003</li>
+          <li><b>CONTENT_LENGTH</b>: 21</li>
+          <li><b>CONTENT_TYPE</b>: application/json</li>
+          <li><b>DISPLAY</b>: /tmp/launch-yI0RmK/org.macosforge.xquartz:0</li>
+          <li><b>GATEWAY_INTERFACE</b>: CGI/1.1</li>
+          <li><b>HOME</b>: /Users/jmarshall</li>
+          <li><b>HTTP_ACCEPT</b>: */*</li>
+          <li><b>HTTP_ACCEPT_ENCODING</b>: gzip,deflate,sdch</li>
+          <li><b>HTTP_ACCEPT_LANGUAGE</b>: en-US,en;q=0.8</li>
+          <li><b>HTTP_CONNECTION</b>: keep-alive</li>
+          <li><b>HTTP_HOST</b>: localhost:8000</li>
+          <li><b>HTTP_ORIGIN</b>: http://localhost:8000</li>
+          <li><b>HTTP_REFERER</b>: http://localhost:8000/</li>
+          <li><b>HTTP_USER_AGENT</b>: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4)</li>
+          <li><b>ITERM_PROFILE</b>: Default</li>
+          <li><b>ITERM_SESSION_ID</b>: w0t1p1</li>
+          <li><b>LANG</b>: en_US.UTF-8</li>
+          <li><b>LOGNAME</b>: jmarshall</li>
+          <li><b>MXMLC_PATH</b>: ~/bin/flex/bin/mxmlc</li>
+          <li><b>OLDPWD</b>: /Users/jmarshall/Presentations/APUG-20130709/code</li>
+          <li><b>PATH</b>: </li>
+          <li><b>PATH_INFO</b>: /process</li>
+          <li><b>PWD</b>: /Users/jmarshall/Presentations/APUG-20130709/code/wsgi_process</li>
+          <li><b>QUERY_STRING</b>: </li>
+          <li><b>REMOTE_ADDR</b>: 127.0.0.1</li>
+          <li><b>REMOTE_HOST</b>: 1.0.0.127.in-addr.arpa</li>
+          <li><b>REQUEST_METHOD</b>: POST</li>
+          <li><b>SCRIPT_NAME</b>: </li>
+          <li><b>SECURITYSESSIONID</b>: 186a5</li>
+          <li><b>SERVER_NAME</b>: josh-macbook-pro.local</li>
+          <li><b>SERVER_PORT</b>: 8000</li>
+          <li><b>SERVER_PROTOCOL</b>: HTTP/1.1</li>
+          <li><b>SERVER_SOFTWARE</b>: WSGIServer/0.1 Python/2.7.2</li>
+          <li><b>SHELL</b>: /bin/bash</li>
+          <li><b>SHLVL</b>: 1</li>
+          <li><b>SSH_AUTH_SOCK</b>: /tmp/launch-4QZWdj/Listeners</li>
+          <li><b>TERM</b>: xterm</li>
+          <li><b>TERM_PROGRAM</b>: iTerm.app</li>
+          <li><b>TMPDIR</b>: /var/folders/f_/7fnqd5r14zngq914cxzt_6q00000gn/T/</li>
+          <li><b>USER</b>: </li>
+          <li><b>VERSIONER_PYTHON_PREFER_32_BIT</b>: no</li>
+          <li><b>VERSIONER_PYTHON_VERSION</b>: 2.7</li>
+          <li><b>VIRTUALENVWRAPPER_HOOK_DIR</b>: /Users/jmarshall/.virtualenvs</li>
+          <li><b>VIRTUALENVWRAPPER_PROJECT_FILENAME</b>: .project</li>
+          <li><b>WORKON_HOME</b>: /Users/jmarshall/.virtualenvs</li>
+          <li><b>_</b>: /usr/bin/python</li>
+          <li><b>__CF_USER_TEXT_ENCODING</b>: 0x1F5:0:0</li>
+          <li><b>wsgi.errors</b>: &lt;open file '&lt;stderr&gt;', mode 'w' at 0x1069ee270&gt;</li>
+          <li><b>wsgi.file_wrapper</b>: wsgiref.util.FileWrapper</li>
+          <li><b>wsgi.input</b>: &lt;socket._fileobject object at 0x106aec7d0&gt;</li>
+          <li><b>wsgi.multiprocess</b>: False</li>
+          <li><b>wsgi.multithread</b>: True</li>
+          <li><b>wsgi.run_once</b>: False</li>
+          <li><b>wsgi.url_scheme</b>: http</li>
+          <li><b>wsgi.version</b>: (1, 0)</li>
+        </ul>
+        </section>
+
+        <section>
+        <h3>Valuable Keys</h3>
+        <p>Some of the more valuable entries in <code class="invert">environ</code></p>
+        <ul>
+          <li class="fragment"><b>PATH_INFO</b>: Contains the path part of a URL</li>
+          <li class="fragment"><b>REQUEST_METHOD</b>: "GET", "POST", etc.</li>
+          <li class="fragment"><b>QUERY_STRING</b>: Everything past the ?</li>
+          <li class="fragment"><b>REMOTE_ADDR</b>: The client IP address</li>
+          <li class="fragment"><b>wsgi.input</b>: File-like object (request body)</li>
+        </ul>
+        </section>
+
+        <section>
+        <h3>WSGI is a callable</h3>
+        <p class="fragment">Raw WSGI makes simple apps very easy</p>
+        <p class="fragment">Makes complex apps... interesting.</p>
+        <p class="fragment">Most modern frameworks support this at the core.</p>
+        <p class="fragment">Most abstract away the application itself.</p>
+        <p class="fragment">Request and response objects, templating...</p>
+        </section>
+
+        <section>
+        <h2>More Complicated Example</h2>
+        <h3>Show JSON Example</h3>
+        </section>
+
+        <section>
+        <h3>Complications Arise</h3>
+        <ul>
+          <li>Raw WSGI is great if you want to...</li>
+          <li class="fragment">roll your own routing</li>
+          <li class="fragment">parse request arguments yourself</li>
+          <li class="fragment">tightly control body parsing</li>
+          <li class="fragment">intercept and redirect application behavior</li>
+          <li class="fragment">rule your own world</li>
+          <li class="fragment">tear all your hair out</li>
+          <li class="fragment">It's a bad choice if you want to just 'get stuff done'.</li>
+        </ul>
+        </section>
+
+        <section>
+        <img src="images/wsgi_stack_framework.png"/>
+        </section>
+
+
+        <section>
+        <h3>WSGI is an adapter</h3>
+        <p>Really, WSGI <i>enables</i> frameworks.</p>
+        <p class="fragment">Abstract container, support custom interfaces.</p>
+        <p class="fragment">Most basic are wrappers like WebOb and Werkzeug</p>
+        <p class="fragment">Simple frameworks like Flask to monsters like Django.</p>
+        </section>
+
+        <section>
+        <h3>Roll Your Own</h3>
+        <p>There are a lot of pieces out there.</p>
+        <p class="fragment">Use what you know, or what you want to learn.</p>
+        <p class="fragment">Jinja2, Cheetah, Mako, etc. for templates.</p>
+        <p class="fragment">SQLAlchemy, Storm, MongoEngine, etc. for models.</p>
+        <p class="fragment">Werkzeug, custom regex, etc. for routing.</p>
+        </section>
+
+        <section>
+        <h2>Custom Router</h2>
+        <h3>Example of Simple "Roll Your Own"</h3>
+        </section>
+
+        <section>
+        <h3>Use Frameworks that Support WSGI</h3>
+        <p>It's hard to find a framework that DOESN'T.</p>
+        <p>Your usage may constrain what frameworks to use.</p>
+        <p>Limited dependencies? Raw WSGI.</p>
+        <p>Simple APIs? Flask.</p>
+        <p>Content management / massive app? Django.</p>
+        </section>
+
+        <section>
+        <img src="images/wsgi_stack_middleware.png"/>
+        </section>
+
+        <section>
+        <h3>Middleware Changes Things</h3>
+        <p>One of the more powerful aspects of WSGI</p>
+        <p>You can nest apps.</p>
+        <p>Environ can be modified.</p>
+        <p>You can call start_response multiple times.</p>
+        <p>This means, you can intercept and change things.</p>
+        </section>
+
+        <section>
+        <h2>Simple Proxy Example</h2>
+        <pre><code class="python">
+def proxy_host(app):
+    def proxy_app(environ, start_response):
+        if "HTTP_X_FORWARDED" in environ:
+            environ["REMOTE_ADDR"] = environ["HTTP_X_FORWARDED"]
+        return app(environ, start_response)
+    return proxy_app
+
+@proxy_host
+def application(environ, start_response):
+    # do actual stuff...
+          </code></pre>
+        </section>
+
+
+        <section>
+        <h3>Extending Environ</h3>
+        <p>Some WSGI adapters extend functionality.</p>
+        <pre><code class="python">
+# wrapped with gevent's websocket handler
+def websocket_app(environ, start_response):
+  socket = environ["wsgi.websocket"]
+  socket.send(json.dumps({"foo": "bar"})
+          </code></pre>
+        </section>
+
+
+        <section>
+        <img src="images/wsgi_stack_server.png"/>
+        </section>
+
+        <section>
+        <h3>Servers</h3>
+        <p>There are LOTS of WSGI deployment options.</p>
+        <p class="fragment">gevent, mod_wsgi, gunicorn, cgi...</p>
+        <p class="fragment">Depends on what you want to do.</p>
+        <p class="fragment">Frequently middleware will be involved.</p>
+        </section>
+
+        <section>
+        <h3>WSGIREF Example</h3>
+        <p>For development ONLY</p>
+        <pre><code class="python">
+from wsgiref.simple_server import make_server
+def app(environ, start_response):
+    start_response("200 OK", [("Content-Type", "text/json")])
+    yield "Hello World!"
+
+server = make_server("", 8000, app)
+server.serve_forever()
+          </code></pre>
+        </section>
+
+        <section>
+        <h2>Simple Gunicorn Example</h2>
+        <h3>Running an existing app</h3>
+        </section>
+
+        <section>
+        <h3>Links</h3>
+        <p>IF you want to do raw WSGI... <a href="http://docs.python.org/2/library/wsgiref.html">wsgiref</a></p>
+        <p>Werkzeug utilities are very <a href="http://werkzeug.pocoo.org/">helpful</a></p>
+        <p>Heroku deployment is easy <a href="https://devcenter.heroku.com/articles/python">here</a>.</p>
+        </section>
+
+
+        <section>
+        <h2>Questions?</h2>
+        <p class="fragment">@joshmarshall on the Twitters.</p>
+        <p class="fragment">@joshmarshall on the GitHub.</p>
+        <data class="quiz-question" data-question="What company sponsored tonight?" data-answers="postmaster"/>
+        </section>
+
+
+      </div>
+
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.min.js"></script>
+
+    <script>
+
+      // Full list of configuration options available here:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        backgroundTransition: "linear",
+        history: true,
+        center: true,
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: [
+        { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+        { src: 'plugin/markdown/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+        { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+        { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+        // { src: 'plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+        ]
+      });
+
+    </script>
+
+    <ul id="quiz-answers">
+    </ul>
+
+    <!--
+    <div id="quiz-overlay">
+      <span class="quiz-title">Question:</span>
+      <span id="quiz-question">Where are you?</span>
+      <span class="quiz-title">Results:</span>
+      <span id="quiz-correct">0</span>/<span id="quiz-total">0</span>
+      <span id="quiz-leaderboard-show">Show</span>
+      <ul id="quiz-leaderboard"></ul>
+    </div>
+    -->
+
+    <script type="text/javascript" src="control.js"></script>
+
+  </body>
+</html>
